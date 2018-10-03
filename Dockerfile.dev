@@ -1,0 +1,14 @@
+FROM python:3.6
+
+EXPOSE 5000
+WORKDIR /usr/src/app
+
+COPY ./src ./src
+COPY ./requirement.txt ./
+
+# RUN apk add --no-cache gcc libc-dev unixodbc-dev
+
+RUN pip install -r ./requirement.txt
+RUN ls
+
+CMD ["python", "./src/server.py"]
