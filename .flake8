@@ -2,6 +2,6 @@
 
 # ignore = D103
 
-exclude = tests
+exclude = tests/*
 
 import-order-style = google
