@@ -1,8 +1,15 @@
+"""Временный модуль, переписать на выборки из базы."""
+
 import json
+import os
+
+from config import PROJECT_PATH
 
 
 def get_lot(lot_id=None):
-    with open('jsons/lot.json') as jf:
+    """Информация о лоте из файла "jsons/lot.json"."""
+    file_path = os.path.join(PROJECT_PATH, 'jsons/lot.json')
+    with open(file_path) as jf:
         data = json.load(jf)
     if lot_id:
         data = [lot for lot in data if lot['id'] == int(lot_id)]
@@ -10,6 +17,7 @@ def get_lot(lot_id=None):
 
 
 def collections_bublics(page=None):
+    """Информация о бубликах из файла "jsons/collections/bublics.json"."""
     page_size = 10
     page = page or 1
 
@@ -18,7 +26,8 @@ def collections_bublics(page=None):
         to_ = from_ + page_size
         return from_ <= num < to_
 
-    with open('jsons/collections/bublics.json') as jf:
+    file_path = os.path.join(PROJECT_PATH, 'jsons/collections/bublics.json')
+    with open(file_path) as jf:
         data = json.load(jf)
         data = [product for product in data if check_page(product['id'])]
     return data
