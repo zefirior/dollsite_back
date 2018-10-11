@@ -1,7 +1,5 @@
 [flake8]
 
-# ignore = D103
-
 exclude = tests/*
 
 import-order-style = google
