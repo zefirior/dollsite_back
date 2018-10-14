@@ -26,24 +26,36 @@ def lot():
 def bublics():
     """Информация о бубликах."""
     page = request.args.get('page', None)
+    app.logger.debug(collections_bublics(page=page))
     response = jsonify(collections_bublics(page=page))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
 
-@app.route('/file/<path:file_uid>', methods=['GET'])
-def file_send(file_uid: str):
+@app.route('/file/<uuid:file_uuid>', methods=['GET'])
+def file_send(file_uuid):
     """Отправка файлов."""
+    conn = get_db()
+    cur = conn.cursor()
+    cur.execute(
+        "select file_path from source_file where code = %s",
+        (str(file_uuid), )
+    )
+    file_name = cur.fetchone()
+    if file_name is None:
+        return abort(404, 'File does not exists')
+    else:
+        file_name = file_name[0]
+
     file_path = os.path.join(
         app.config["DOLLSITE_FILE_STORAGE"],
-        file_uid
+        file_name
     )
-    if not os.path.exists(file_path):
-        return abort(404, 'file "{}" does not exists'.format(file_uid))
-    elif not os.path.isfile(file_path):
-        return abort(404, 'path "{}" is not file'.format(file_uid))
-    else:
-        return send_file(file_path)
+
+    if not os.path.exists(file_path) or not os.path.isfile(file_path):
+        return abort(404, 'File does not exists')
+
+    return send_file(file_path)
 
 
 @app.route('/dbping', methods=['GET'])
