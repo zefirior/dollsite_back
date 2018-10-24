@@ -1,5 +1,7 @@
 """Модуль содержит функционал соединения с базой данных."""
 
+from contextlib import contextmanager
+
 from app import app
 from flask import g
 import psycopg2 as pg
@@ -26,3 +28,14 @@ def close_db(error):
     """Триггер закрывающий подключение к базе."""
     if hasattr(g, "site_db"):
         g.site_db.close()
+
+
+@contextmanager
+def db_cursor():
+    """Контекст предоставляющий курсор к базе."""
+    connection = get_db()
+    cur = connection.cursor()
+
+    yield cur
+
+    cur.close()

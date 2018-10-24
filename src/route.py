@@ -11,6 +11,7 @@ from flask import (
     send_file,
 )
 from json_methods import collections_bublics, get_lot
+from models import Merch
 
 
 @app.route('/lot', methods=['GET'])
@@ -56,6 +57,30 @@ def file_send(file_uuid):
         return abort(404, 'File does not exists')
 
     return send_file(file_path)
+
+
+@app.route('/merch/add', methods=['POST'])
+def merch_add():
+    """Метод API добавления товара."""
+    merch_name = request.form['merch_name']
+    merch_desc = request.form['merch_desc']
+
+    merch = Merch(name=merch_name, desc=merch_desc)
+    merch.update()
+    return merch.uuid
+
+
+@app.route('/merch/update', methods=['POST'])
+def merch_update():
+    """Метод API изменения товара."""
+    merch_uuid = request.form['merch_uuid']
+    merch_name = request.form['merch_name']
+    merch_desc = request.form['merch_desc']
+
+    merch = Merch.by_uuid(merch_uuid)
+    merch.name, merch.desc = merch_name, merch_desc
+    merch.update()
+    return merch.uuid
 
 
 @app.route('/dbping', methods=['GET'])
