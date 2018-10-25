@@ -21,7 +21,7 @@ class Merch:
         return self._uuid
 
     @classmethod
-    def by_uuid(cls, uuid):
+    def by_uuid(cls, uuid: str):
         """Метод возвращает инстанс 'Товар' по его UUID."""
         with db_cursor() as cur:
             cur.execute(
@@ -30,7 +30,7 @@ class Merch:
                 FROM merch
                 WHERE uuid = %s
                 """,
-                (str(uuid), )
+                (uuid, )
             )
             app.logger.info(cur.query)
 
@@ -40,11 +40,28 @@ class Merch:
             uuid, name, desc = res
             return cls(name, desc, uuid)
 
+    @classmethod
+    def lst(cls):
+        """Метод возвращает инстансы всех товаров по его UUID."""
+        with db_cursor() as cur:
+            cur.execute(
+                """
+                SELECT uuid, name, description
+                FROM merch
+                """,
+            )
+            app.logger.info(cur.query)
+
+            for uuid, name, desc in cur.fetchall():
+                yield cls(name, desc, uuid)
+
     def _generate_uuid(self):
         self._uuid = str(uuid.uuid4())
 
-    def _insert(self):
-        self._generate_uuid()
+    def insert(self):
+        """Запись данных в базу."""
+        if self.uuid is None:
+            self._generate_uuid()
         with db_cursor() as cur:
             cur.execute(
                 """
@@ -56,7 +73,8 @@ class Merch:
             app.logger.info(cur.query)
             cur.connection.commit()
 
-    def _update(self):
+    def update(self):
+        """Изменение данных в базе."""
         with db_cursor() as cur:
             cur.execute(
                 """
@@ -69,9 +87,16 @@ class Merch:
             app.logger.info(cur.query)
             cur.connection.commit()
 
-    def update(self):
-        """Запись данных в базу."""
-        if self._uuid is None:
-            self._insert()
-        else:
-            self._update()
+    def delete(self):
+        """Удаление мерча из DB."""
+        if self._uuid:
+            with db_cursor() as cur:
+                cur.execute(
+                    """
+                    DELETE FROM merch
+                    WHERE uuid = %s
+                    """,
+                    (self._uuid, )
+                )
+                app.logger.info(cur.query)
+                cur.connection.commit()

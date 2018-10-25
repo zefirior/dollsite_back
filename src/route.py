@@ -59,28 +59,60 @@ def file_send(file_uuid):
     return send_file(file_path)
 
 
-@app.route('/merch/add', methods=['POST'])
-def merch_add():
+@app.route('/merch/insert', methods=['POST'])
+def merch_insert():
     """Метод API добавления товара."""
-    merch_name = request.form['merch_name']
-    merch_desc = request.form['merch_desc']
+    merch_uuid = request.form.get('uuid', None)
+    merch_name = request.form.get('name', '')
+    merch_desc = request.form.get('desc', '')
 
-    merch = Merch(name=merch_name, desc=merch_desc)
-    merch.update()
+    if not merch_name and not merch_desc:
+        return abort(404, 'No data')
+
+    merch = Merch(name=merch_name, desc=merch_desc, uuid=merch_uuid)
+    merch.insert()
     return merch.uuid
 
 
 @app.route('/merch/update', methods=['POST'])
 def merch_update():
     """Метод API изменения товара."""
-    merch_uuid = request.form['merch_uuid']
-    merch_name = request.form['merch_name']
-    merch_desc = request.form['merch_desc']
+    merch_uuid = request.form['uuid']
 
     merch = Merch.by_uuid(merch_uuid)
-    merch.name, merch.desc = merch_name, merch_desc
+    if merch is None:
+        return abort(404, "Merch '{}' doesn't find".format(merch_uuid))
+
+    merch.name = request.form.get('name', merch.name)
+    merch.desc = request.form.get('desc', merch.desc)
     merch.update()
-    return merch.uuid
+    return 'OK'
+
+
+@app.route('/merch/delete', methods=['POST'])
+def merch_delete():
+    """Метод API удаления товара."""
+    merch_uuid = request.form['uuid']
+
+    merch = Merch.by_uuid(merch_uuid)
+    if merch:
+        merch.delete()
+    return 'OK'
+
+
+@app.route('/merch/lst', methods=['POST'])
+def merch_lst():
+    """Метод API для получения списка товаров."""
+    res = []
+    for merch in Merch.lst():
+        res.append({
+            "uuid": merch.uuid,
+            "name": merch.name,
+            "desc": merch.desc
+        })
+    response = jsonify(res)
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 @app.route('/dbping', methods=['GET'])
