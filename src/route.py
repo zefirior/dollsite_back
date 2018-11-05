@@ -1,5 +1,6 @@
 """Модуль содержит правила роутинга приложения."""
 
+from functools import wraps
 import os
 
 from app import app
@@ -7,6 +8,7 @@ from db import get_db
 from flask import (
     abort,
     jsonify,
+    make_response,
     request,
     send_file,
 )
@@ -14,23 +16,31 @@ from json_methods import collections_bublics, get_lot
 from models import Merch
 
 
+def _access_control_allow_origin(func):
+    @wraps(func)
+    def wrap(*arg, **kw):
+        response = func(*arg, **kw)
+        response = make_response(response)
+        response.headers['Access-Control-Allow-Origin'] = '*'
+        return response
+    return wrap
+
+
 @app.route('/lot', methods=['GET'])
+@_access_control_allow_origin
 def lot():
     """Информация о лотах."""
     lot_id = request.args.get('lot_id', None)
-    response = jsonify(get_lot(lot_id))
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
+    return jsonify(get_lot(lot_id))
 
 
 @app.route('/collections/bublics', methods=['GET'])
+@_access_control_allow_origin
 def bublics():
     """Информация о бубликах."""
     page = request.args.get('page', None)
     app.logger.debug(collections_bublics(page=page))
-    response = jsonify(collections_bublics(page=page))
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
+    return jsonify(collections_bublics(page=page))
 
 
 @app.route('/file/<uuid:file_uuid>', methods=['GET'])
@@ -60,6 +70,7 @@ def file_send(file_uuid):
 
 
 @app.route('/merch/insert', methods=['POST'])
+@_access_control_allow_origin
 def merch_insert():
     """Метод API добавления товара."""
     merch_uuid = request.form.get('uuid', None)
@@ -71,10 +82,12 @@ def merch_insert():
 
     merch = Merch(name=merch_name, desc=merch_desc, uuid=merch_uuid)
     merch.insert()
+
     return merch.uuid
 
 
 @app.route('/merch/update', methods=['POST'])
+@_access_control_allow_origin
 def merch_update():
     """Метод API изменения товара."""
     merch_uuid = request.form['uuid']
@@ -86,12 +99,15 @@ def merch_update():
     merch.name = request.form.get('name', merch.name)
     merch.desc = request.form.get('desc', merch.desc)
     merch.update()
+
     return 'OK'
 
 
 @app.route('/merch/delete', methods=['POST'])
+@_access_control_allow_origin
 def merch_delete():
     """Метод API удаления товара."""
+    app.logger.debug(request.form)
     merch_uuid = request.form['uuid']
 
     merch = Merch.by_uuid(merch_uuid)
@@ -101,6 +117,7 @@ def merch_delete():
 
 
 @app.route('/merch/lst', methods=['POST'])
+@_access_control_allow_origin
 def merch_lst():
     """Метод API для получения списка товаров."""
     res = []
@@ -110,12 +127,11 @@ def merch_lst():
             "name": merch.name,
             "desc": merch.desc
         })
-    response = jsonify(res)
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
+    return jsonify(res)
 
 
 @app.route('/dbping', methods=['GET'])
+@_access_control_allow_origin
 def dbping():
     """Пример подключения к базе данных."""
     conn = get_db()
